@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steganography Detector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            font-weight: normal;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #fff;
+            border: 1px solid #ddd;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+
+        .panel {
+            padding: 2rem;
+            border-right: 1px solid #ddd;
+        }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            display: block;
+            padding: 0.75rem;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .file-label:hover {
+            background: #e8e8e8;
+            border-color: #0066cc;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        button:hover:not(:disabled) {
+            background: #e8e8e8;
+            border-color: #0066cc;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .message {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #ddd;
+            background: #f8f9fa;
+            font-size: 0.9rem;
+        }
+
+        .message.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .message.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .message.info {
+            border-left-color: #0066cc;
+            background: #cfe2ff;
+            color: #084298;
+        }
+
+        .message.warning {
+            border-left-color: #ff9800;
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .image-preview {
+            width: 100%;
+            max-height: 300px;
+            border: 1px solid #ddd;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .image-preview.show {
+            display: block;
+        }
+
+        .result-box {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .result-item {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .result-label {
+            font-weight: bold;
+            color: #0066cc;
+            font-size: 0.9rem;
+        }
+
+        .result-value {
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .analysis-chart {
+            width: 100%;
+            height: 200px;
+            margin: 1rem 0;
+            border: 1px solid #ddd;
+            background: #fff;
+            position: relative;
+        }
+
+        .chart-bar {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: linear-gradient(180deg, #0066cc 0%, #cfe2ff 100%);
+        }
+
+        .risk-high {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .risk-medium {
+            color: #ff9800;
+            font-weight: bold;
+        }
+
+        .risk-low {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            border-top: 1px solid #ddd;
+            padding: 1rem 2rem;
+            font-size: 0.85rem;
+            color: #666;
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+            }
+
+            .panel:last-child {
+                border-bottom: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Steganography Detector</h1>
+        <p>Analyze images for hidden data and steganographic indicators.</p>
+    </div>
+
+    <div class="container">
+        <!-- Upload Panel -->
+        <div class="panel">
+            <div class="form-group">
+                <label for="imageInput">Select image:</label>
+                <input type="file" id="imageInput" accept="image/*">
+                <label for="imageInput" class="file-label">Choose Image</label>
+            </div>
+
+            <div id="uploadMessage" class="message hidden"></div>
+
+            <img id="imagePreview" class="image-preview" alt="Preview">
+
+            <div class="form-group">
+                <button id="analyzeBtn" disabled>Analyze Image</button>
+                <button id="clearBtn">Clear</button>
+            </div>
+        </div>
+
+        <!-- Analysis Panel -->
+        <div class="panel">
+            <div id="analysisResult" class="result-box hidden"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>All processing is done locally in your browser. No image data is sent to any server.</p>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const uploadMessage = document.getElementById('uploadMessage');
+        const analysisResult = document.getElementById('analysisResult');
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                imagePreview.src = event.target.result;
+                imagePreview.classList.add('show');
+                analyzeBtn.disabled = false;
+                uploadMessage.classList.add('hidden');
+                analysisResult.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        });
+
+        analyzeBtn.addEventListener('click', async () => {
+            if (!imageInput.files[0]) return;
+
+            showMessage(uploadMessage, 'Analyzing image...', 'info');
+            analyzeBtn.disabled = true;
+
+            try {
+                const analysis = await analyzeImage(imageInput.files[0]);
+                displayAnalysis(analysis);
+                showMessage(uploadMessage, 'Analysis complete', 'success');
+            } catch (err) {
+                showMessage(uploadMessage, 'Error: ' + err.message, 'error');
+            } finally {
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            imageInput.value = '';
+            imagePreview.classList.remove('show');
+            analyzeBtn.disabled = true;
+            uploadMessage.classList.add('hidden');
+            analysisResult.classList.add('hidden');
+        });
+
+        async function analyzeImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+
+                        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+                        const data = imageData.data;
+
+                        // Analyze LSBs for data
+                        let lsbCount = 0;
+                        for (let i = 0; i < data.length; i += 4) {
+                            for (let j = 0; j < 3; j++) {
+                                if ((data[i + j] & 1) === 1) {
+                                    lsbCount++;
+                                }
+                            }
+                        }
+
+                        const totalPixels = (img.width * img.height) * 3;
+                        const lsbPercentage = (lsbCount / totalPixels) * 100;
+
+                        // Calculate entropy
+                        const entropy = calculateEntropy(data);
+
+                        // Analyze color distribution
+                        const colorAnalysis = analyzeColorDistribution(data);
+
+                        // LSB patterns
+                        const lsbPatterns = detectLSBPatterns(data);
+
+                        // Estimate hidden data capacity
+                        const capacity = (img.width * img.height * 3) / 8; // bytes
+
+                        resolve({
+                            width: img.width,
+                            height: img.height,
+                            fileSize: file.size,
+                            lsbPercentage: lsbPercentage.toFixed(2),
+                            entropy: entropy.toFixed(4),
+                            colorBalance: colorAnalysis.balance,
+                            suspiciousPatterns: lsbPatterns,
+                            capacity: capacity.toFixed(0),
+                            riskLevel: getRiskLevel(lsbPercentage, entropy)
+                        });
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function calculateEntropy(data) {
+            const freq = {};
+            for (let i = 0; i < data.length; i++) {
+                freq[data[i]] = (freq[data[i]] || 0) + 1;
+            }
+
+            let entropy = 0;
+            for (let byte in freq) {
+                const p = freq[byte] / data.length;
+                entropy -= p * Math.log2(p);
+            }
+            return entropy;
+        }
+
+        function analyzeColorDistribution(data) {
+            const r = [], g = [], b = [];
+            for (let i = 0; i < data.length; i += 4) {
+                r.push(data[i]);
+                g.push(data[i + 1]);
+                b.push(data[i + 2]);
+            }
+
+            const rAvg = r.reduce((a, b) => a + b) / r.length;
+            const gAvg = g.reduce((a, b) => a + b) / g.length;
+            const bAvg = b.reduce((a, b) => a + b) / b.length;
+
+            const maxDiff = Math.max(
+                Math.abs(rAvg - gAvg),
+                Math.abs(gAvg - bAvg),
+                Math.abs(rAvg - bAvg)
+            );
+
+            return {
+                balance: maxDiff < 20 ? 'Balanced' : 'Unbalanced',
+                maxDifference: maxDiff.toFixed(2)
+            };
+        }
+
+        function detectLSBPatterns(data) {
+            const patterns = [];
+            const lsbSequence = [];
+
+            for (let i = 0; i < data.length && lsbSequence.length < 1000; i += 4) {
+                for (let j = 0; j < 3; j++) {
+                    lsbSequence.push((data[i + j] & 1));
+                }
+            }
+
+            // Check for non-random patterns
+            let ones = lsbSequence.filter(x => x === 1).length;
+            const balance = ones / lsbSequence.length;
+
+            if (balance > 0.6 || balance < 0.4) {
+                patterns.push('Non-random LSB distribution');
+            }
+
+            // Check for repeating patterns
+            let maxRun = 0;
+            let currentRun = 1;
+            for (let i = 1; i < Math.min(100, lsbSequence.length); i++) {
+                if (lsbSequence[i] === lsbSequence[i - 1]) {
+                    currentRun++;
+                    maxRun = Math.max(maxRun, currentRun);
+                } else {
+                    currentRun = 1;
+                }
+            }
+
+            if (maxRun > 10) {
+                patterns.push('Repetitive LSB patterns detected');
+            }
+
+            return patterns.length > 0 ? patterns.join(', ') : 'None detected';
+        }
+
+        function getRiskLevel(lsbPercentage, entropy) {
+            if (lsbPercentage > 60 || entropy > 7.5) {
+                return 'High - Likely contains hidden data';
+            } else if (lsbPercentage > 40 || entropy > 7.0) {
+                return 'Medium - Possible hidden data';
+            } else {
+                return 'Low - Appears natural';
+            }
+        }
+
+        function displayAnalysis(analysis) {
+            let riskClass = 'risk-low';
+            if (analysis.riskLevel.includes('High')) {
+                riskClass = 'risk-high';
+            } else if (analysis.riskLevel.includes('Medium')) {
+                riskClass = 'risk-medium';
+            }
+
+            const html = `
+                <div class="result-item">
+                    <div class="result-label">Dimensions:</div>
+                    <div class="result-value">${analysis.width} × ${analysis.height} px</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">File Size:</div>
+                    <div class="result-value">${(analysis.fileSize / 1024).toFixed(2)} KB</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">LSB Activity:</div>
+                    <div class="result-value">${analysis.lsbPercentage}%</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Entropy:</div>
+                    <div class="result-value">${analysis.entropy}</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Color Balance:</div>
+                    <div class="result-value">${analysis.colorBalance}</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Suspicious Patterns:</div>
+                    <div class="result-value">${analysis.suspiciousPatterns}</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Hidden Data Capacity:</div>
+                    <div class="result-value">${analysis.capacity} bytes</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Risk Assessment:</div>
+                    <div class="result-value ${riskClass}">${analysis.riskLevel}</div>
+                </div>
+            `;
+
+            analysisResult.innerHTML = html;
+            analysisResult.classList.remove('hidden');
+        }
+
+        function showMessage(element, text, type) {
+            element.textContent = text;
+            element.className = `message ${type}`;
+            element.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
